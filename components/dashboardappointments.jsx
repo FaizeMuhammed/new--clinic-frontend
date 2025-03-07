@@ -81,9 +81,8 @@ const DashboardContent = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // This function will be passed to the modal to update appointments after adding
+  // Handle new appointment added
   const handleAppointmentAdded = (newAppointment, namee) => {
-    // Transform the new appointment to match the format in the list
     const transformedAppointment = {
       ...newAppointment,
       patientName: namee || 'Unknown Patient',
@@ -91,8 +90,6 @@ const DashboardContent = () => {
       category: newAppointment.doctorId?.specialty || 'General',
       location: newAppointment.location || 'Main Clinic'
     };
-    
-    // Add the new appointment to the state
     setAppointments(prevAppointments => [transformedAppointment, ...prevAppointments]);
   };
 
@@ -115,7 +112,6 @@ const DashboardContent = () => {
       try {
         setLoading(true);
         const data = await fetchAppointments();
-        
         const transformedData = data.map(apt => ({
           ...apt,
           patientName: apt.patientId?.name || 'Unknown Patient',
@@ -123,7 +119,6 @@ const DashboardContent = () => {
           category: apt.doctorId?.specialty || 'General',
           location: apt.patientId?.location || apt.location || 'Main Clinic'
         }));
-        
         setAppointments(transformedData);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -131,7 +126,6 @@ const DashboardContent = () => {
         setLoading(false);
       }
     };
-
     fetchAppointmentsData();
   }, []);
 
@@ -143,49 +137,38 @@ const DashboardContent = () => {
     }));
   };
 
-  // Updated filteredAndSortedAppointments with fixed date handling
+  // Filter and sort appointments
   const filteredAndSortedAppointments = useMemo(() => {
     return appointments
       .filter(appointment => {
-        // Match search term
         const matchesSearch = appointment.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               appointment.doctorName?.toLowerCase().includes(searchTerm.toLowerCase());
-
-        // Match date based on viewMode
         let matchesDate = true;
         if (viewMode === 'today') {
-          const today = getTodayFormatted(); // Get today's date in DD/MM/YYYY format
-          matchesDate = appointment.date === today; // Match today's date
+          const today = getTodayFormatted();
+          matchesDate = appointment.date === today;
         } else if (viewMode === 'date') {
-          const formattedSelectedDate = formatDateForAPI(selectedDate); // Convert YYYY-MM-DD to DD/MM/YYYY
-          matchesDate = appointment.date === formattedSelectedDate; // Match selected date
-        } // If viewMode is 'all', matchesDate remains true
-
-        // Match doctor
+          const formattedSelectedDate = formatDateForAPI(selectedDate);
+          matchesDate = appointment.date === formattedSelectedDate;
+        }
         const matchesDoctor = selectedDoctor === 'all' ? true : 
                               appointment.doctorId?._id === selectedDoctor;
-
         return matchesSearch && matchesDate && matchesDoctor;
       })
       .sort((a, b) => {
         if (sortConfig.key === 'time') {
-          // Handle time ranges like "9:00 AM - 12:00 PM" by taking the start time
           const getStartTime = (timeStr) => {
             if (!timeStr) return null;
             const startTime = timeStr.split(' - ')[0];
             return startTime ? new Date(`2000/01/01 ${startTime}`) : null;
           };
-          
           const timeA = getStartTime(a.time);
           const timeB = getStartTime(b.time);
-          
           if (!timeA && !timeB) return 0;
           if (!timeA) return sortConfig.direction === 'asc' ? 1 : -1;
           if (!timeB) return sortConfig.direction === 'asc' ? -1 : 1;
-          
           return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
         }
-        
         if (sortConfig.key === 'patientName') {
           const nameA = a.patientName || '';
           const nameB = b.patientName || '';
@@ -193,7 +176,6 @@ const DashboardContent = () => {
             ? nameA.localeCompare(nameB) 
             : nameB.localeCompare(nameA);
         }
-        
         if (sortConfig.key === 'doctorName') {
           const nameA = a.doctorName || '';
           const nameB = b.doctorName || '';
@@ -201,7 +183,6 @@ const DashboardContent = () => {
             ? nameA.localeCompare(nameB) 
             : nameB.localeCompare(nameA);
         }
-        
         if (sortConfig.key === 'category') {
           const catA = a.category || '';
           const catB = b.category || '';
@@ -209,25 +190,19 @@ const DashboardContent = () => {
             ? catA.localeCompare(catB) 
             : catB.localeCompare(catA);
         }
-        
         if (sortConfig.key === 'date') {
-          // Properly convert DD/MM/YYYY to date objects for comparison
           const parseDate = (dateStr) => {
             if (!dateStr) return null;
             const [day, month, year] = dateStr.split('/');
             return new Date(year, month - 1, day);
           };
-          
           const dateA = parseDate(a.date);
           const dateB = parseDate(b.date);
-          
           if (!dateA && !dateB) return 0;
           if (!dateA) return sortConfig.direction === 'asc' ? 1 : -1;
           if (!dateB) return sortConfig.direction === 'asc' ? -1 : 1;
-          
           return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
-    
         if (sortConfig.key === 'status') {
           const statusA = a.status || '';
           const statusB = b.status || '';
@@ -235,7 +210,6 @@ const DashboardContent = () => {
             ? statusA.localeCompare(statusB) 
             : statusB.localeCompare(statusA);
         }
-        
         if (sortConfig.key === 'type') {
           const typeA = a.type || '';
           const typeB = b.type || '';
@@ -243,7 +217,6 @@ const DashboardContent = () => {
             ? typeA.localeCompare(typeB) 
             : typeB.localeCompare(typeA);
         }
-        
         if (sortConfig.key === 'location') {
           const locA = a.location || '';
           const locB = b.location || '';
@@ -251,17 +224,13 @@ const DashboardContent = () => {
             ? locA.localeCompare(locB) 
             : locB.localeCompare(locA);
         }
-        
-        // Default sorting (fallback)
         const valueA = a[sortConfig.key] || '';
         const valueB = b[sortConfig.key] || '';
-        
         if (typeof valueA === 'string' && typeof valueB === 'string') {
           return sortConfig.direction === 'asc' 
             ? valueA.localeCompare(valueB) 
             : valueB.localeCompare(valueA);
         }
-        
         return sortConfig.direction === 'asc' 
           ? (valueA > valueB ? 1 : -1) 
           : (valueA < valueB ? 1 : -1);
@@ -313,7 +282,6 @@ const DashboardContent = () => {
               className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
             />
           </PaginationItem>
-          
           {startPage > 1 && (
             <>
               <PaginationItem>
@@ -322,7 +290,6 @@ const DashboardContent = () => {
               {startPage > 2 && <PaginationEllipsis />}
             </>
           )}
-
           {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
             <PaginationItem key={page}>
               <PaginationLink
@@ -333,7 +300,6 @@ const DashboardContent = () => {
               </PaginationLink>
             </PaginationItem>
           ))}
-
           {endPage < totalPages && (
             <>
               {endPage < totalPages - 1 && <PaginationEllipsis />}
@@ -344,7 +310,6 @@ const DashboardContent = () => {
               </PaginationItem>
             </>
           )}
-
           <PaginationItem>
             <PaginationNext
               onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
@@ -471,7 +436,7 @@ const DashboardContent = () => {
         </Tabs>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {viewMode !== 'all' && (
+          {viewMode === 'date' && (
             <Input
               type="date"
               value={selectedDate}
