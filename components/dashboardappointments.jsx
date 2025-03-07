@@ -127,9 +127,12 @@ const DashboardContent = () => {
         const matchesSearch = appointment.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             appointment.doctorName?.toLowerCase().includes(searchTerm.toLowerCase());
         
+        // Fix for date comparison
+        const appointmentDateFormatted = appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : null;
+        
         const matchesDate = viewMode === 'all' ? true : 
-                           viewMode === 'today' ? appointment.date === selectedDate : 
-                           appointment.date === selectedDate;
+                           viewMode === 'today' ? appointmentDateFormatted === selectedDate : 
+                           appointmentDateFormatted === selectedDate;
         
         const matchesDoctor = selectedDoctor === 'all' ? true : 
                              appointment.doctorId?._id === selectedDoctor;
