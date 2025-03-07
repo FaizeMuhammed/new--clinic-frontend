@@ -100,7 +100,7 @@ const AddDoctorModal = ({ onClose, onSave }) => {
         availability: availabilityObject
       };
 
-      const response = await fetch('http://128.199.27.140:5000/doctors', {
+      const response = await fetch('https://api.nexcard.co.in/doctors', {
         method: 'POST',
         credentials: 'include',
         headers: {

@@ -1,6 +1,6 @@
 // service/patientapi.js
 
-const API_BASE_URL = 'http://128.199.27.140:5000/patients';
+const API_BASE_URL = 'https://api.nexcard.co.in/patients';
 
 export const fetchPatients = async () => {
   try {

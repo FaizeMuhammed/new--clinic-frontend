@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://128.199.27.140:5000';
+const API_BASE_URL = 'https://api.nexcard.co.in';
 
 export const fetchDoctors = async () => {
   try {

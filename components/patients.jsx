@@ -70,7 +70,7 @@ export const Patients = () => {
 
 const fetchPatients = useCallback(async () => {
     try {
-      const response = await fetch('http://128.199.27.140:5000/patients',{
+      const response = await fetch('https://api.nexcard.co.in/patients',{
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch patients');

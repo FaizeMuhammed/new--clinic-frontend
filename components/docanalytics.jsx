@@ -44,8 +44,8 @@ export const Docanalytics = () => {
 
         // Use Promise.all to fetch data in parallel
         const [doctors, appointments] = await Promise.all([
-          fetchWithErrorHandling('http://128.199.27.140:5000/doctors'),
-          fetchWithErrorHandling('http://128.199.27.140:5000/appointments')
+          fetchWithErrorHandling('https://api.nexcard.co.in/doctors'),
+          fetchWithErrorHandling('https://api.nexcard.co.in/appointments')
         ]);
 
         // Validate the data

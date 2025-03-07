@@ -49,7 +49,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       // Updated to match the backend endpoint '/register'
-      const response = await API.post('http://128.199.27.140:5000/auth/register', formData);
+      const response = await API.post('https://api.nexcard.co.in/auth/register', formData);
       toast.success(response.data.message || 'Account created successfully!');
       router.push('/login');
     } catch (error) {

@@ -17,7 +17,7 @@ const DailyReport = ({ isOpen, onClose, currentDate, analyticsData, summaryData 
         const tomorrow = format(addDays(currentDate, 1), 'dd/MM/yyyy');
         
         // Use the same URL structure as in Docanalytics component
-        const appointmentsResponse = await axios.get('http://128.199.27.140:5000/appointments');
+        const appointmentsResponse = await axios.get('https://api.nexcard.co.in/appointments');
         const appointments = appointmentsResponse.data;
 
         if (!Array.isArray(appointments)) {

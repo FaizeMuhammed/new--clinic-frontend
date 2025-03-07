@@ -48,7 +48,7 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       // Call backend login API directly
-      const response = await axios.post('http://128.199.27.140:5000/auth/login', formData);
+      const response = await axios.post('https://api.nexcard.co.in/auth/login', formData);
       const { token, user } = response.data;
       console.log(response);
       

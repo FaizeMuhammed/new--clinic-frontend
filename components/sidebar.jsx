@@ -19,7 +19,7 @@ const Sidebar = ({activeComponent, setActiveComponent}) => {
   const handleLogout = async () => {
     try {
       // Call the logout API endpoint
-      const response = await fetch('http://localhost:5000/auth/logout', {
+      const response = await fetch('https://api.nexcard.co.in/auth/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
