@@ -58,8 +58,31 @@ const DashboardContent = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // Format date from DD/MM/YYYY to YYYY-MM-DD for comparison
+  const formatDateForComparison = (dateStr) => {
+    if (!dateStr) return '';
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Format date from YYYY-MM-DD to DD/MM/YYYY for API
+  const formatDateForAPI = (dateStr) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  // Today's date in DD/MM/YYYY format for comparison
+  const getTodayFormatted = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // This function will be passed to the modal to update appointments after adding
-  const handleAppointmentAdded = (newAppointment,namee) => {
+  const handleAppointmentAdded = (newAppointment, namee) => {
     // Transform the new appointment to match the format in the list
     const transformedAppointment = {
       ...newAppointment,
@@ -120,33 +143,42 @@ const DashboardContent = () => {
     }));
   };
 
-  // Filter and sort appointments
+  // Updated filteredAndSortedAppointments with fixed date handling
   const filteredAndSortedAppointments = useMemo(() => {
     return appointments
       .filter(appointment => {
+        // Match search term
         const matchesSearch = appointment.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            appointment.doctorName?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // Fix for date comparison
-        const appointmentDateFormatted = appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : null;
-        
-        const matchesDate = viewMode === 'all' ? true : 
-                           viewMode === 'today' ? appointmentDateFormatted === selectedDate : 
-                           appointmentDateFormatted === selectedDate;
-        
+                              appointment.doctorName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        // Match date based on viewMode
+        let matchesDate = true;
+        if (viewMode === 'today') {
+          const today = getTodayFormatted(); // Get today's date in DD/MM/YYYY format
+          matchesDate = appointment.date === today; // Match today's date
+        } else if (viewMode === 'date') {
+          const formattedSelectedDate = formatDateForAPI(selectedDate); // Convert YYYY-MM-DD to DD/MM/YYYY
+          matchesDate = appointment.date === formattedSelectedDate; // Match selected date
+        } // If viewMode is 'all', matchesDate remains true
+
+        // Match doctor
         const matchesDoctor = selectedDoctor === 'all' ? true : 
-                             appointment.doctorId?._id === selectedDoctor;
-        
+                              appointment.doctorId?._id === selectedDoctor;
+
         return matchesSearch && matchesDate && matchesDoctor;
       })
       .sort((a, b) => {
-        // Handle each sort key specifically
         if (sortConfig.key === 'time') {
-          // Parse times to ensure correct sorting
-          const timeA = a.time ? new Date(`2000/01/01 ${a.time}`) : null;
-          const timeB = b.time ? new Date(`2000/01/01 ${b.time}`) : null;
+          // Handle time ranges like "9:00 AM - 12:00 PM" by taking the start time
+          const getStartTime = (timeStr) => {
+            if (!timeStr) return null;
+            const startTime = timeStr.split(' - ')[0];
+            return startTime ? new Date(`2000/01/01 ${startTime}`) : null;
+          };
           
-          // Handle null/undefined values
+          const timeA = getStartTime(a.time);
+          const timeB = getStartTime(b.time);
+          
           if (!timeA && !timeB) return 0;
           if (!timeA) return sortConfig.direction === 'asc' ? 1 : -1;
           if (!timeB) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -179,18 +211,23 @@ const DashboardContent = () => {
         }
         
         if (sortConfig.key === 'date') {
-          // Parse dates for proper comparison
-          const dateA = a.date ? new Date(a.date) : null;
-          const dateB = b.date ? new Date(b.date) : null;
+          // Properly convert DD/MM/YYYY to date objects for comparison
+          const parseDate = (dateStr) => {
+            if (!dateStr) return null;
+            const [day, month, year] = dateStr.split('/');
+            return new Date(year, month - 1, day);
+          };
           
-          // Handle null/undefined values
+          const dateA = parseDate(a.date);
+          const dateB = parseDate(b.date);
+          
           if (!dateA && !dateB) return 0;
           if (!dateA) return sortConfig.direction === 'asc' ? 1 : -1;
           if (!dateB) return sortConfig.direction === 'asc' ? -1 : 1;
           
           return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
-
+    
         if (sortConfig.key === 'status') {
           const statusA = a.status || '';
           const statusB = b.status || '';
@@ -319,8 +356,7 @@ const DashboardContent = () => {
     );
   };
 
-
-  // New function to render mobile card view
+  // Mobile card view
   const MobileAppointmentCard = ({ appointment }) => (
     <div className="bg-white rounded-lg shadow p-4 mb-4">
       <div className="flex justify-between items-start mb-3">
@@ -359,7 +395,7 @@ const DashboardContent = () => {
           variant="ghost"
           size="sm"
           onClick={() => handleStatusChange(appointment._id, 'Scheduled')}
-          className={appointment.status === 'Scheduled' ? 'text-orange-600' : ''}
+          className={appointment.status === 'Scheduled' ? 'text-orange-600 bg-orange-50' : ''}
         >
           <Clock className="h-4 w-4" />
         </Button>
@@ -367,7 +403,7 @@ const DashboardContent = () => {
           variant="ghost"
           size="sm"
           onClick={() => handleStatusChange(appointment._id, 'Completed')}
-          className={appointment.status === 'Completed' ? 'text-green-600' : ''}
+          className={appointment.status === 'Completed' ? 'text-green-600 bg-green-50' : ''}
         >
           <Check className="h-4 w-4" />
         </Button>
@@ -375,7 +411,7 @@ const DashboardContent = () => {
           variant="ghost"
           size="sm"
           onClick={() => handleStatusChange(appointment._id, 'Cancelled')}
-          className={appointment.status === 'Cancelled' ? 'text-red-600' : ''}
+          className={appointment.status === 'Cancelled' ? 'text-red-600 bg-red-50' : ''}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -387,7 +423,7 @@ const DashboardContent = () => {
     <div className="flex-1 p-4 md:p-8 bg-gray-50 min-h-screen">
       {isModalOpen && <AddAppointmentModal onClose={closeModal} onAppointmentAdded={handleAppointmentAdded} doctors={doctors} />}
 
-      {/* Header Section - Now more responsive */}
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="w-full md:w-auto">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">Appointment Management</h1>
@@ -412,9 +448,9 @@ const DashboardContent = () => {
         </div>
       </div>
 
-      {/* Filters Section - More compact on mobile */}
+      {/* Filters Section */}
       <div className="space-y-4 mb-6">
-        <Tabs defaultValue="today" onValueChange={setViewMode} className="w-full">
+        <Tabs defaultValue="today" value={viewMode} onValueChange={setViewMode} className="w-full">
           <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex gap-2">
             <TabsTrigger value="today" className="flex items-center justify-center">
               <Clock className="mr-2 h-4 w-4" />
@@ -485,12 +521,12 @@ const DashboardContent = () => {
         </div>
       </div>
 
-      {/* Content Section - Responsive table/card switch */}
+      {/* Content Section */}
       <Card>
         <CardHeader>
           <CardTitle>
             {viewMode === 'today' ? "Today's Appointments" :
-             viewMode === 'date' ? `Appointments for ${selectedDate}` :
+             viewMode === 'date' ? `Appointments for ${formatDateForAPI(selectedDate)}` :
              "All Appointments"}
             {filteredAndSortedAppointments.length > 0 && (
               <span className="text-sm font-normal text-gray-500 ml-2">
@@ -540,17 +576,22 @@ const DashboardContent = () => {
                       <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </TableHead>
+                  <TableHead onClick={() => sortData('status')} className="cursor-pointer">
+                    Status {sortConfig.key === 'status' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center">Loading...</TableCell>
+                    <TableCell colSpan={9} className="text-center">Loading...</TableCell>
                   </TableRow>
                 ) : currentItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center">No appointments found</TableCell>
+                    <TableCell colSpan={9} className="text-center">No appointments found</TableCell>
                   </TableRow>
                 ) : currentItems.map((appointment) => (
                   <TableRow key={appointment._id}>
@@ -567,6 +608,16 @@ const DashboardContent = () => {
                         'bg-orange-100 text-orange-800'
                       }`}>
                         {appointment.type}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        appointment.status === 'Scheduled' ? 'bg-orange-100 text-orange-800' :
+                        appointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                        appointment.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {appointment.status}
                       </span>
                     </TableCell>
                     <TableCell>
